@@ -62,8 +62,10 @@ export function RoomPage() {
   }, [roomId]);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
     const socket = io(socketUrl, {
       withCredentials: true,
+      auth: { token },
       transports: ['websocket', 'polling'],
     });
 

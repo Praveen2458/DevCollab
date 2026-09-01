@@ -14,7 +14,7 @@ export const signup = asyncHandler(async (req, res) => {
   const token = signAccessToken({ sub: user._id.toString() });
   setAuthCookie(res, token);
 
-  res.status(201).json({ user });
+  res.status(201).json({ user, token });
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -30,7 +30,7 @@ export const login = asyncHandler(async (req, res) => {
   setAuthCookie(res, token);
 
   const safeUser = await User.findById(user._id);
-  res.json({ user: safeUser });
+  res.json({ user: safeUser, token });
 });
 
 export const logout = asyncHandler(async (req, res) => {

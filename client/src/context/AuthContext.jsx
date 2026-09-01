@@ -9,10 +9,16 @@ export function AuthProvider({ children }) {
 
   const refreshMe = useCallback(async () => {
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setUser(null);
+        return null;
+      }
       const { data } = await http.get('/api/auth/me');
       setUser(data.user);
       return data.user;
     } catch {
+      localStorage.removeItem('token');
       setUser(null);
       return null;
     }
@@ -37,12 +43,18 @@ export function AuthProvider({ children }) {
 
   const signup = useCallback(async ({ name, email, password }) => {
     const { data } = await http.post('/api/auth/signup', { name, email, password });
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+    }
     setUser(data.user);
     return data.user;
   }, []);
 
   const login = useCallback(async ({ email, password }) => {
     const { data } = await http.post('/api/auth/login', { email, password });
+    if (data.token) {
+      localStorage.setItem('token', data.token);
+    }
     setUser(data.user);
     return data.user;
   }, []);
@@ -51,6 +63,7 @@ export function AuthProvider({ children }) {
     try {
       await http.post('/api/auth/logout');
     } finally {
+      localStorage.removeItem('token');
       setUser(null);
     }
   }, []);

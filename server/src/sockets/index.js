@@ -188,6 +188,14 @@ export function initSockets(httpServer) {
       pendingNoteSaves.set(roomId, { timer, content: content ?? '', updatedBy: socket.user._id });
     });
 
+    socket.on('chat:typing', ({ roomId }) => {
+      if (!roomId) return;
+      socket.to(roomId).emit('chat:typing', {
+        roomId,
+        user: { _id: socket.user._id, name: socket.user.name },
+      });
+    });
+
     socket.on('disconnect', async () => {
       removeOnline(socket.user._id, socket.id);
 

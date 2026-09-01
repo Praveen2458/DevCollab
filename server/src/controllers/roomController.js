@@ -78,3 +78,43 @@ export const deleteRoom = asyncHandler(async (req, res) => {
 
   res.json({ ok: true });
 });
+
+export const leaveRoom = asyncHandler(async (req, res) => {
+  const { roomId } = req.validated.params;
+
+  const room = await Room.findOne({ roomId });
+  if (!room) throw new AppError('Room not found', 404);
+
+  const isCreator = room.createdBy.toString() === req.user._id.toString();
+  if (isCreator) throw new AppError('Room owner cannot leave. Transfer ownership or delete the room.', 400);
+
+  const isMember = room.participants.some((p) => p.toString() === req.user._id.toString());
+  if (!isMember) throw new AppError('You are not in this room', 400);
+
+  room.participants = room.participants.filter((p) => p.toString() !== req.user._id.toString());
+  await room.save();
+
+  res.json({ ok: true });
+});
+
+export const kickParticipant = asyncHandler(async (req, res) => {
+  const { roomId, userId } = req.validated.params;
+
+  const room = await Room.findOne({ roomId });
+  if (!room) throw new AppError('Room not found', 404);
+
+  const isCreator = room.createdBy.toString() === req.user._id.toString();
+  if (!isCreator) throw new AppError('Only the room owner can remove participants', 403);
+
+  if (userId === req.user._id.toString()) {
+    throw new AppError('You cannot remove yourself. Delete the room instead.', 400);
+  }
+
+  const isMember = room.participants.some((p) => p.toString() === userId);
+  if (!isMember) throw new AppError('User is not in this room', 400);
+
+  room.participants = room.participants.filter((p) => p.toString() !== userId);
+  await room.save();
+
+  res.json({ ok: true });
+});

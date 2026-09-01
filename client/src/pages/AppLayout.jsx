@@ -54,6 +54,7 @@ export function AppLayout() {
   const [roomTitle, setRoomTitle] = useState('');
   const [joinId, setJoinId] = useState('');
   const [error, setError] = useState('');
+  const [confirmRoom, setConfirmRoom] = useState(null);
 
   const sortedRooms = useMemo(() => rooms, [rooms]);
 
@@ -107,19 +108,25 @@ export function AppLayout() {
     navigate('/login', { replace: true });
   }
 
-  async function onDeleteRoom(room) {
+  function onDeleteRoom(room) {
+    setConfirmRoom(room);
+  }
+
+  async function confirmDeleteRoom() {
+    if (!confirmRoom) return;
     setError('');
     try {
-      await http.delete(`/api/rooms/${room.roomId}`);
+      await http.delete(`/api/rooms/${confirmRoom.roomId}`);
 
-      setRooms((prev) => prev.filter((r) => r._id !== room._id));
+      setRooms((prev) => prev.filter((r) => r._id !== confirmRoom._id));
 
-      if (location.pathname.startsWith(`/app/rooms/${room.roomId}`)) {
+      if (location.pathname.startsWith(`/app/rooms/${confirmRoom.roomId}`)) {
         navigate('/app', { replace: true });
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to delete room');
     }
+    setConfirmRoom(null);
   }
 
   return (
@@ -186,6 +193,22 @@ export function AppLayout() {
       <main className="min-w-0">
         <Outlet context={{ reloadRooms: loadRooms }} />
       </main>
+
+      {/* Confirm Delete Modal */}
+      {confirmRoom && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60">
+          <div className="w-full max-w-sm rounded-xl border border-slate-700 bg-slate-900 p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-slate-100">Delete Room?</h3>
+            <p className="text-sm text-slate-400">
+              Permanently delete <strong className="text-slate-200">{confirmRoom.title}</strong> and all its messages and notes? This cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setConfirmRoom(null)}>Cancel</Button>
+              <Button variant="danger" onClick={confirmDeleteRoom}>Delete Room</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
